@@ -36,7 +36,7 @@ def main():
         # get top submissions of the month; store what hour/day they were posted
         for submission in reddit.subreddit(sub).top("month", limit=sub_limit):
             time = int(submission.created_utc)
-            time_str = datetime.utcfromtimestamp(time).strftime('%a %H:00')
+            time_str = datetime.utcfromtimestamp(time).strftime('%w %H')
             d[time_str] += 1
 
         # write most successful hour/day combinations to CSV

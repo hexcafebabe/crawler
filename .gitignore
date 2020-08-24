@@ -2,3 +2,4 @@ tokens.py
 subs.py
 __pycache__/*
 *.csv
+.vscode
