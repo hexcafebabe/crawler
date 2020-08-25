@@ -7,19 +7,26 @@ import random
 fieldnames = ['id','title','body','subreddit','date','time',
   'timezone','nsfw','sendreplies','delete']
 
+SUNDAY = 6
+WEEK = 7
+
 def main():
   a = sys.argv
   if len(a) < 2:
     print('error: put filename on cmdline')
   else:
-    read(a[1])
+    today = datetime.date.today()
+    if len(a) < 3:
+      print('default: starting scheduling from next sunday.')
+      start_date = today + datetime.timedelta(today.weekday()+SUNDAY % WEEK)
+      read(a[1], start_date)
+    else: 
+      print('starting scheduling from ' + a[2] + ' days from today.')
+      start_date = today + datetime.timedelta(today.weekday()+ int(a[2]))
+      read(a[1], start_date)
 
-def read(filename):
+def read(filename, start_date):
   rows = []
-
-  # start posting from the following sunday
-  today = datetime.date.today()
-  sunday = today + datetime.timedelta(today.weekday()+6 % 7)
 
   with open(filename) as csv_file:
     reader = csv.DictReader(csv_file)
@@ -30,13 +37,13 @@ def read(filename):
       split = row['time'].split(' ')
       dayOfWeek = int(split[0])
       weekOfMonth = 7 * random.randint(0,3)
-      hour = split[1] + ':' + str("%02d" % random.randint(0, 60))
-      date = sunday + datetime.timedelta(dayOfWeek + weekOfMonth) 
+      hour = split[1] + ':' + str("%02d" % random.randint(0, 60)) # hour + randomized minute
+      date = start_date + datetime.timedelta(dayOfWeek + weekOfMonth) 
       fmt_date = date.strftime('%Y-%m-%d')
       row = {
         'id': '',                 # empty; Cronnit auto-fills
-        'title': '',              # empty; manually filled
-        'body': '',               # empty; manually filled
+        'title': '[f] [oc]',      # sorta empty; manually filled
+        'body': '',               # empty; manually filled imgur link
         'subreddit': row['sub'],
         'date': fmt_date,
         'time': hour,

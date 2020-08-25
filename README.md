@@ -36,4 +36,19 @@ crawl.py uses my reddit tokens from a file called tokens.py to create a reddit i
 I have a python dict of strings: `{ category : [subreddits] }` that I want to analyze in subs.py.
 
 ## schedule.py ##
-this tool reads the CSV in the format that comes from crawl.py
+this tool reads the CSV in the format that comes from crawl.py, and creates a CSV that can be 
+uploaded directly to Cronnit to schedule batch posts. given a start date and the CSV input,
+schedule.py will create semi-random posting times from the start date until 28 days later.
+the hour+day combinations are set, since those are what were analyzed to be top performing in
+crawl.py. however the week of month and minute of hour are randomized.
+
+
+the output of the csv is:
+```csv
+id,title,body,subreddit,date,time,timezone,nsfw,sendreplies,delete
+,[f] [oc],,/r/subreddit,2020-10-25,23:33,GMT-0700,1,1,0
+```
+
+the id and body are intentionally left blank since they will be filled by Cronnit and myself
+respectively at a later time. naturaly since I do only NSFW work, I pre-fill the title with 
+`[f]` and `[oc]`.
