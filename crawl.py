@@ -4,12 +4,11 @@ from datetime import datetime
 from collections import defaultdict
 import praw
 import tokens # reddit API keys
-import subs   # my secret collection of subs to post to :-)
+from subs import categories   # my secret collection of subs to post to :-)
 import csv
 import sys
 
-def main():
-  sub_limit, num_times = set_limits()
+def run(sub_limit, num_times):
   reddit = praw.Reddit(client_id=tokens.client_id,
                       client_secret=tokens.client_secret,
                       password=tokens.password,
@@ -24,12 +23,12 @@ def main():
     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
     writer.writeheader()
 
-    # subs.categories = { categoryA : [subreddit1, subreddit2, ...],
+    # categories = { categoryA : [subreddit1, subreddit2, ...],
     #                     categoryB : [subreddit3, subreddit4, ...],
     #                   }
-    for c in subs.categories.keys():
+    for c in categories.keys():
       print('working on category: ' + c)
-      for sub in subs.categories[c]:
+      for sub in categories[c]:
         f_sub ='/r/' + sub
         d = defaultdict(int)
 
@@ -45,15 +44,24 @@ def main():
           writer.writerow({'sub': f_sub, 'time': k, 'posts': str(d[k])})
 
 
-def set_limits():
+def main():
   a = sys.argv
   sub_limit = 300
   num_times = 5
   if len(a) >= 2:
-    sub_limit = int(a[1])
+    if (a[1] == "--help"):
+      print(" crawl.py \n usage: python3 crawl.py [sub_limit] [num_times] \n default: python3 crawl.py 300 5")
+      return
+    else:
+      sub_limit = int(a[1])
   if len(a) >= 3:
     num_times = int(a[2])
-  return sub_limit, num_times
+
+  subs = 0
+  for k in categories.keys():
+    subs += len(categories[k])
+  print("using " + str(subs) + " total subs.")
+  run(sub_limit, num_times)
 
 if __name__ == "__main__":
   main()

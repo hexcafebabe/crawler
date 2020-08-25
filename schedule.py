@@ -15,6 +15,10 @@ def main():
   if len(a) < 2:
     print('error: put filename on cmdline')
   else:
+    if (a[1] == '--help'):
+      print(" schedule.py \n usage: python3 schedule.py file.csv [start_date] \n default: python3 schedule.py file.csv next_sunday")
+      return
+
     today = datetime.date.today()
     if len(a) < 3:
       print('default: starting scheduling from next sunday.')
