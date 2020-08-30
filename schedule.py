@@ -1,6 +1,7 @@
 import sys
 import csv
 import datetime
+from collections import defaultdict
 import random
 
 # field names required for Cronnit
@@ -9,6 +10,8 @@ fieldnames = ['id','title','body','subreddit','date','time',
 
 SUNDAY = 6
 WEEK = 7
+
+capped = defaultdict(int)
 
 def main():
   a = sys.argv
@@ -26,12 +29,21 @@ def main():
       read(a[1], start_date)
     else: 
       print('starting scheduling from ' + a[2] + ' days from today.')
-      start_date = today + datetime.timedelta(today.weekday()+ int(a[2]))
+      start_date = today + datetime.timedelta(int(a[2]))
       read(a[1], start_date)
+
+# if there are too many posts on a day, just bump it to a week later.
+def upDate(date):
+  ctr = 0
+  while (capped[date] > 3):
+    date = date + datetime.timedelta(weeks=1)
+    ctr += 1
+    print("bumped " + str(ctr) + " times")
+  capped[date] += 1
+  return date
 
 def read(filename, start_date):
   rows = []
-
   with open(filename) as csv_file:
     reader = csv.DictReader(csv_file)
 
@@ -40,9 +52,10 @@ def read(filename, start_date):
     for row in reader:
       split = row['time'].split(' ')
       dayOfWeek = int(split[0])
-      weekOfMonth = 7 * random.randint(0,3)
+      weekOfMonth = WEEK * random.randint(0,3)
       hour = split[1] + ':' + str("%02d" % random.randint(0, 60)) # hour + randomized minute
-      date = start_date + datetime.timedelta(dayOfWeek + weekOfMonth) 
+      date = start_date + datetime.timedelta(dayOfWeek + weekOfMonth)
+      date = upDate(date) 
       fmt_date = date.strftime('%Y-%m-%d')
       row = {
         'id': '',                 # empty; Cronnit auto-fills
