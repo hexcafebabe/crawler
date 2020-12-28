@@ -1,3 +1,5 @@
+import calendar
+from sub_object import result
 import sys
 import csv
 import datetime
@@ -10,58 +12,42 @@ fieldnames = ['id','title','body','subreddit','date','time',
 
 SUNDAY = 6
 WEEK = 7
-
-capped = defaultdict(int)
+NAME = 0
+LIST = 1
 
 def main():
-  a = sys.argv
-  if len(a) < 2:
-    print('error: put filename on cmdline')
-  else:
-    if (a[1] == '--help'):
-      print(" schedule.py \n usage: python3 schedule.py file.csv [start_date] \n default: python3 schedule.py file.csv next_sunday")
-      return
+  to_array = []
+  for sub_name in result.keys():
+    sub = result[sub_name]
+    sub_obj = []
+    for dt in sub.keys():
+      day = int(dt[0])
+      time = dt[1:]
+      sub_obj.append(dt)
+    to_array.append([sub_name, sub_obj])
 
-    today = datetime.date.today()
-    if len(a) < 3:
-      print('default: starting scheduling from next sunday.')
-      start_date = today + datetime.timedelta(today.weekday()+SUNDAY % WEEK)
-      read(a[1], start_date)
-    else: 
-      print('starting scheduling from ' + a[2] + ' days from today.')
-      start_date = today + datetime.timedelta(int(a[2]))
-      read(a[1], start_date)
+  writeup(to_array)
 
-# if there are too many posts on a day, just bump it to a week later.
-def upDate(date):
-  ctr = 0
-  while (capped[date] > 3):
-    date = date + datetime.timedelta(weeks=1)
-    ctr += 1
-    print("bumped " + str(ctr) + " times")
-  capped[date] += 1
-  return date
-
-def read(filename, start_date):
+def writeup(sub_array):
   rows = []
-  with open(filename) as csv_file:
-    reader = csv.DictReader(csv_file)
+  num_times = len(sub_array[0][LIST])
 
-    # assumes that "crawl.py" is used to make the csv_file, 
-    # since it's got a weird format.
-    for row in reader:
-      split = row['time'].split(' ')
-      dayOfWeek = int(split[0])
-      weekOfMonth = WEEK * random.randint(0,3)
-      hour = split[1] + ':' + str("%02d" % random.randint(0, 60)) # hour + randomized minute
-      date = start_date + datetime.timedelta(dayOfWeek + weekOfMonth)
-      date = upDate(date) 
+  # assumes that "crawl.py" is used to make the object, 
+  # since it's got a weird format.
+  for idx in range(num_times):
+    for sub in sub_array:
+      sub_name = sub[NAME]
+      timestamp = sub[LIST][idx]
+      dayOfWeek = int(timestamp[0])
+      weekOfMonth = WEEK * idx
+      hour = timestamp[1:] + ':' + str("%02d" % random.randint(0, 60)) # hour + randomized minute
+      date = datetime.date.today() + datetime.timedelta(dayOfWeek + weekOfMonth)
       fmt_date = date.strftime('%Y-%m-%d')
       row = {
         'id': '',                 # empty; Cronnit auto-fills
         'title': '[f] [oc]',      # sorta empty; manually filled
         'body': '',               # empty; manually filled imgur link
-        'subreddit': row['sub'],
+        'subreddit': sub_name,
         'date': fmt_date,
         'time': hour,
         'timezone': 'GMT-0700',

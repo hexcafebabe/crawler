@@ -1,14 +1,17 @@
-# app here: https://www.reddit.com/prefs/apps/
-
+# libraries
 from datetime import datetime
+import calendar
 from collections import defaultdict
 import praw
-import tokens # reddit API keys
-from subs import categories   # my secret collection of subs to post to :-)
 import csv
 import sys
 
+# personal files
+import tokens
+from subs import categories
+
 def run(sub_limit, num_times):
+  master_list = {}
   reddit = praw.Reddit(client_id=tokens.client_id,
                       client_secret=tokens.client_secret,
                       password=tokens.password,
@@ -17,34 +20,37 @@ def run(sub_limit, num_times):
 
   # set up csv format
   fieldnames = ['sub', 'time', 'posts']
-  filename = datetime.now().strftime('%Y-%m-%d') + '.csv'
+  filename = datetime.now().strftime('sorted_%Y-%m-%d') + '.csv'
 
-  with open(filename, mode='w') as csv_file:
-    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-    writer.writeheader()
+  for c in categories.keys():
+    print('working on category: ' + c)
+    for sub in categories[c]:
+      formatted_sub = '/r/' + sub
+      print('\t' + formatted_sub)
+      d = defaultdict(int)
+      scores = defaultdict(int)
 
-    # categories = { categoryA : [subreddit1, subreddit2, ...],
-    #                     categoryB : [subreddit3, subreddit4, ...],
-    #                   }
-    for c in categories.keys():
-      print('working on category: ' + c)
-      for sub in categories[c]:
-        f_sub ='/r/' + sub
-        d = defaultdict(int)
+      # get top submissions of the month; store what hour/day they were posted AND
+      # how many upvotes they got
+      for submission in reddit.subreddit(sub).top("month", limit=sub_limit):
+          time = int(submission.created_utc)
+          time_str = datetime.utcfromtimestamp(time).strftime('%w %H')
+          d[time_str] += 1
+          scores[time_str] += int(submission.score)
 
-        # get top submissions of the month; store what hour/day they were posted
-        for submission in reddit.subreddit(sub).top("month", limit=sub_limit):
-            time = int(submission.created_utc)
-            time_str = datetime.utcfromtimestamp(time).strftime('%w %H')
-            d[time_str] += 1
+      # write most successful hour/day combinations to dict
+      successes = {}
+      best_times = sorted(d, key=d.get, reverse=True)[:num_times]
+      for time in best_times:
+        successes[time] = scores[time]
 
-        # write most successful hour/day combinations to CSV
-        best_times = sorted(d, key=d.get, reverse=True)[:num_times]
-        for k in best_times:
-          writer.writerow({'sub': f_sub, 'time': k, 'posts': str(d[k])})
+      master_list[formatted_sub] = successes
 
+  with open("sub_object.py", "a") as f:
+    print('result = ', end='', file=f)
+    print(str(master_list), file=f)
 
-def main():
+def setup():
   a = sys.argv
   sub_limit = 300
   num_times = 5
@@ -61,6 +67,10 @@ def main():
   for k in categories.keys():
     subs += len(categories[k])
   print("using " + str(subs) + " total subs.")
+  return sub_limit, num_times
+
+def main():
+  sub_limit, num_times = setup()
   run(sub_limit, num_times)
 
 if __name__ == "__main__":
